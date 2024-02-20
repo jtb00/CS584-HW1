@@ -81,6 +81,7 @@ class NearestNeighborClassifier:
         # split each review into a separate line
         reviews = tk.tokenize(content)
         y = np.zeros(len(reviews))
+        self.word_list = {}
         # clean text, remove stop words, stem words
         for i in range(len(reviews)):
             reviews[i] = reviews[i].replace('<br />', '').replace('#eof', '')
@@ -91,6 +92,11 @@ class NearestNeighborClassifier:
             # split each line into separate words
             reviews[i] = reviews[i].split()
             reviews[i] = [wnl.lemmatize(word) for word in reviews[i] if word not in stop]
+            for w in reviews[i]:
+                if w not in self.word_list.keys():
+                    self.word_list[w] = 1
+                else:
+                    self.word_list[w] += 1
             print(i)
         print(reviews[0])
 
