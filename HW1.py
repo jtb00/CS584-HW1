@@ -139,9 +139,43 @@ class NearestNeighborClassifier:
     # predict test data based on training data
     def predict(self, test):
         pred = []
+        count = 0
         # compare each test review against all training reviews
         for t in test:
-
+            distances = [999999] * self.k
+            labels = [0] * self.k
+            if self.dist_func == 'manhattan':
+                for i in range(len(self.x_train)):
+                    dist = manhattan_dist(t, self.x_train[i])
+                    if dist < min(distances):
+                        ind = distances.index(max(distances))
+                        distances[ind] = dist
+                        labels[ind] = self.y_train[i]
+            elif self.dist_func == 'euclidean':
+                for i in range(len(self.x_train)):
+                    dist = euclidean_dist(t, self.x_train[i])
+                    if dist < min(distances):
+                        ind = distances.index(max(distances))
+                        distances[ind] = dist
+                        labels[ind] = self.y_train[i]
+            else:
+                for i in range(len(self.x_train)):
+                    dist = cosine_dist(t, self.x_train[i])
+                    if dist < min(distances):
+                        ind = distances.index(max(distances))
+                        distances[ind] = dist
+                        labels[ind] = self.y_train[i]
+            mean = 0
+            for l in labels:
+                mean += l
+            mean = mean / len(labels)
+            if mean > 0:
+                pred.append(1)
+            else:
+                pred.append(-1)
+            print(count)
+            count += 1
+        return pred
 
 
 x_train, y_train, words = import_train('train.txt', 100, 'binary')
@@ -151,12 +185,20 @@ for i in range(5):
     end = i * 5000 + 5000
     # split train set into train and validation
     x_val = x_train[start:end]
-    x_tr = x_train[0:start] + x_train[end:]
     y_val = y_train[start:end]
-    y_tr = y_train[0:start] + y_train[end:]
+    if start == 0:
+        x_tr = x_train[end:]
+        y_tr = y_train[end:]
+    elif end == 25000:
+        x_tr = x_train[0:start]
+        y_tr = y_train[0:start]
+    else:
+        x_tr = np.concatenate((x_train[0:start], x_train[end:]))
+        y_tr = np.concatenate(y_train[0:start], y_train[end:])
     for d in dist:
         for k in K:
             nnc = NearestNeighborClassifier(words, k, 'binary', d, 100)
             nnc.fit(x_tr, y_tr)
-            # pred = nnc.predict(x_val)
+            pred = nnc.predict(x_val)
+            print(pred)
 # create output file based on test data
