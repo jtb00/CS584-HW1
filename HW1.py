@@ -79,7 +79,7 @@ def import_train(path, num_words, bow_rep):
             # otherwise, add 1 to its count
             else:
                 word_list[w] += 1
-        print(i)
+        # print(i)
     if num_words != 9999:
         freq_words = heapq.nlargest(num_words, word_list, key=word_list.get)
         word_list = freq_words
@@ -113,6 +113,14 @@ def import_train(path, num_words, bow_rep):
             # count += 1
         x_train.append(vector)
     return x_train, y_train, word_list
+
+
+def accuracy(pred, act):
+    count = 0
+    for i in range(len(pred)):
+        if pred[i] == act[i]:
+            count += 1
+    return count / len(pred)
 
 
 # define k-nearest neighbors classifier
@@ -173,32 +181,34 @@ class NearestNeighborClassifier:
                 pred.append(1)
             else:
                 pred.append(-1)
-            print(count)
+            # print(count)
             count += 1
         return pred
 
 
 x_train, y_train, words = import_train('train.txt', 100, 'binary')
 # cross validation for parameters
-for i in range(5):
-    start = i * 5000
-    end = i * 5000 + 5000
-    # split train set into train and validation
-    x_val = x_train[start:end]
-    y_val = y_train[start:end]
-    if start == 0:
-        x_tr = x_train[end:]
-        y_tr = y_train[end:]
-    elif end == 25000:
-        x_tr = x_train[0:start]
-        y_tr = y_train[0:start]
-    else:
-        x_tr = np.concatenate((x_train[0:start], x_train[end:]))
-        y_tr = np.concatenate(y_train[0:start], y_train[end:])
-    for d in dist:
-        for k in K:
-            nnc = NearestNeighborClassifier(words, k, 'binary', d, 100)
+for d in dist:
+    for k in K:
+        nnc = NearestNeighborClassifier(words, k, 'binary', d, 100)
+        print("dist = " + d + ", K = " + str(k))
+        for i in range(5):
+            start = i * 5000
+            end = i * 5000 + 5000
+            # split train set into train and validation
+            x_val = x_train[start:end]
+            y_val = y_train[start:end]
+            if start == 0:
+                x_tr = x_train[end:]
+                y_tr = y_train[end:]
+            elif end == 25000:
+                x_tr = x_train[0:start]
+                y_tr = y_train[0:start]
+            else:
+                x_tr = np.concatenate((x_train[0:start], x_train[end:]))
+                y_tr = np.concatenate((y_train[0:start], y_train[end:]))
             nnc.fit(x_tr, y_tr)
             pred = nnc.predict(x_val)
-            print(pred)
+            score = accuracy(pred, y_val)
+            print("Slice " + str(i+1) + ": Accuracy = " + str(score))
 # create output file based on test data
