@@ -85,33 +85,37 @@ def import_train(path, num_words, bow_rep):
         word_list = freq_words
     # represent each review as a sparse vector
     x_train = []
-    # count = 0
-    for r in reviews:
-        # finish this later
-        if bow_rep == 'tf_idf':
-            vector = np.zeros(len(word_list))
-            w_list = list(word_list)
-            w_count = np.zeros(len(r))
-            w_total = len(r)
-            for w in r:
-                w_total += 1
-        elif bow_rep == 'raw':
-            vector = np.zeros(len(word_list))
-            w_list = list(word_list)
-            for w in r:
-                ind = w_list.index(w)
-                vector[ind] += 1
-        # rep = binary, default case
-        else:
-            vector = []
-            for w in word_list:
-                if w in r:
-                    vector.append(1)
-                else:
-                    vector.append(0)
-            # print(count)
-            # count += 1
-        x_train.append(vector)
+    count = 0
+    # finish this later
+    if bow_rep == 'tf_idf':
+        word_freq_list = {}
+        for i in range(len(word_list)):
+            for r in reviews:
+                w_count = np.zeros(len(r))
+                w_total = len(r)
+                # count number of times word is in review
+                # tf = number of times word is in review / len(review)
+                # idf = log(number of reviews / number of reviews containing word)
+        # tf * idf
+    else:
+        for r in reviews:
+            if bow_rep == 'raw':
+                vector = np.zeros(len(word_list))
+                w_list = list(word_list)
+                for w in r:
+                    ind = w_list.index(w)
+                    vector[ind] += 1
+            # rep = binary, default case
+            else:
+                vector = []
+                for w in word_list:
+                    if w in r:
+                        vector.append(1)
+                    else:
+                        vector.append(0)
+                print(count)
+                count += 1
+            x_train.append(vector)
     return x_train, y_train, word_list
 
 
@@ -121,6 +125,19 @@ def accuracy(pred, act):
         if pred[i] == act[i]:
             count += 1
     return count / len(pred)
+
+
+# create output file based on test data
+def write_to_file(data):
+    f = open("result.txt", "w")
+    for i in range(len(data)):
+        if data[i] == 1:
+            f.write("+1")
+        else:
+            f.write("-1")
+        if i != (len(data) - 1):
+            f.write("\n")
+    f.close()
 
 
 # define k-nearest neighbors classifier
@@ -181,7 +198,7 @@ class NearestNeighborClassifier:
                 pred.append(1)
             else:
                 pred.append(-1)
-            # print(count)
+            print(count)
             count += 1
         return pred
 
@@ -211,4 +228,4 @@ for d in dist:
             pred = nnc.predict(x_val)
             score = accuracy(pred, y_val)
             print("Slice " + str(i+1) + ": Accuracy = " + str(score))
-# create output file based on test data
+            write_to_file(pred)
