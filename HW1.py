@@ -50,6 +50,32 @@ def cosine_dist(x, y):
     return 1 - (dot / (x_norm * y_norm))
 
 
+def binary_matrix(reviews, word_list):
+    matrix = []
+    for r in reviews:
+        vector = []
+        for w in word_list:
+            if w in r:
+                vector.append(1)
+            else:
+                vector.append(0)
+        matrix.append(vector)
+    return matrix
+
+
+def raw_matrix(reviews, word_list):
+    matrix = []
+    for r in reviews:
+        vector = np.zeros(len(word_list))
+        w_list = list(word_list)
+        for w in r:
+            if w in w_list:
+                ind = w_list.index(w)
+                vector[ind] += 1
+        matrix.append(vector)
+    return matrix
+
+
 # import text data, populate word list, train data
 def import_train(path, num_words, bow_rep):
     tk = LineTokenizer()
@@ -72,13 +98,13 @@ def import_train(path, num_words, bow_rep):
         reviews[i] = reviews[i].split()
         reviews[i] = [wnl.lemmatize(word) for word in reviews[i] if word not in stop]
         # populate word list
-        for w in reviews[i]:
+        for val in reviews[i]:
             # if this word isn't in the word list, add it with count 1
-            if w not in word_list.keys():
-                word_list[w] = 1
+            if val not in word_list.keys():
+                word_list[val] = 1
             # otherwise, add 1 to its count
             else:
-                word_list[w] += 1
+                word_list[val] += 1
         # print(i)
     if num_words != 9999:
         freq_words = heapq.nlargest(num_words, word_list, key=word_list.get)
@@ -86,36 +112,22 @@ def import_train(path, num_words, bow_rep):
     # represent each review as a sparse vector
     x_train = []
     count = 0
-    # finish this later
-    if bow_rep == 'tf_idf':
-        word_freq_list = {}
-        for i in range(len(word_list)):
-            for r in reviews:
-                w_count = np.zeros(len(r))
-                w_total = len(r)
-                # count number of times word is in review
-                # tf = number of times word is in review / len(review)
-                # idf = log(number of reviews / number of reviews containing word)
-        # tf * idf
+    if bow_rep == 'binary':
+        x_train = binary_matrix(reviews, word_list)
+    elif bow_rep == 'tf_idf':
+        b_matrix = np.matrix(binary_matrix(reviews, word_list))
+        r_matrix = raw_matrix(reviews, word_list)
+        # tracks number of reviews containing each word
+        num_reviews_list = np.sum(b_matrix, axis=0)
+        idf_list = np.array(np.log(len(reviews) / num_reviews_list))
+        for i in range(len(r_matrix)):
+            for j in range(len(r_matrix[i])):
+                if r_matrix[i][j] != 0:
+                    new_val = r_matrix[i][j] / len(reviews[i]) * idf_list[0][j]
+                    r_matrix[i][j] = new_val
+        x_train = r_matrix
     else:
-        for r in reviews:
-            if bow_rep == 'raw':
-                vector = np.zeros(len(word_list))
-                w_list = list(word_list)
-                for w in r:
-                    ind = w_list.index(w)
-                    vector[ind] += 1
-            # rep = binary, default case
-            else:
-                vector = []
-                for w in word_list:
-                    if w in r:
-                        vector.append(1)
-                    else:
-                        vector.append(0)
-                print(count)
-                count += 1
-            x_train.append(vector)
+        x_train = raw_matrix(reviews, word_list)
     return x_train, y_train, word_list
 
 
